@@ -1,0 +1,38 @@
+#!/bin/sh -e
+
+iso_image=$1
+
+cdrecord="/usr/local//Cellar/cdrtools/3.01_1/bin/cdrecord"
+
+if [ -z "${iso_image}" ]; then
+  echo "expected an ISO image!" 1>&2
+  exit 1
+fi
+
+opt_cdrecord="driveropts=burnfree gracetime=3"
+
+prepare_audio_track()
+{
+audio_file=$1
+echo -n "$audio_file: "
+if [ ! -f $audio_file ] ; then
+    dd if=/dev/zero bs=2352 count=300 of=$audio_file # Min 4 seconds audio
+else
+    echo "already present"
+fi
+}
+
+run_cdrecord()
+{
+echo cdrecord "$@"
+$sudo $cdrecord "$@"
+}
+
+
+echo; echo ">> Create audio track"
+prepare_audio_track audio.raw
+
+echo; echo ">> Burn CD"
+echo "cd $tmpdir"
+run_cdrecord $opt_cdrecord -multi -audio audio.raw
+run_cdrecord $opt_cdrecord -multi -multi -xa -eject $iso_image
